@@ -5,20 +5,46 @@ import json
 import os
 import random
 
+from flask import Flask
+from threading import Thread
+
+
 # =========================
 # SETTINGS
 # =========================
 
-#TOKEN = "MTU1MzgwMzQyNDEzNzYxMzQ1Mw.GPg5RZ.WdzPT9jOlk6-T9MncgDNNVVOiu39mF1MZAaRDQ"
 TOKEN = os.getenv("TOKEN_BOT")
 
 # Optional:
-# Agar sirf ek server par commands instantly chahiye,
-# apne Discord Server ID ko yahan daal do.
-# Example: GUILD_ID = 123456789012345678
+# If you want slash commands to sync instantly to one server,
+# put your Discord Server ID here.
+# Example:
+# GUILD_ID = 123456789012345678
+
 GUILD_ID = None
 
 DATA_FILE = "questions.json"
+
+
+# =========================
+# RENDER WEB SERVER
+# =========================
+
+app = Flask(__name__)
+
+
+@app.route("/")
+def home():
+    return "Discord Truth or Dare Bot is running!"
+
+
+def run_web_server():
+    port = int(os.getenv("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
+
+# Start Flask in background
+Thread(target=run_web_server, daemon=True).start()
 
 
 # =========================
@@ -33,7 +59,12 @@ def load_questions():
         }
 
         with open(DATA_FILE, "w", encoding="utf-8") as file:
-            json.dump(data, file, indent=4, ensure_ascii=False)
+            json.dump(
+                data,
+                file,
+                indent=4,
+                ensure_ascii=False
+            )
 
         return data
 
@@ -58,7 +89,12 @@ def load_questions():
 
 def save_questions(data):
     with open(DATA_FILE, "w", encoding="utf-8") as file:
-        json.dump(data, file, indent=4, ensure_ascii=False)
+        json.dump(
+            data,
+            file,
+            indent=4,
+            ensure_ascii=False
+        )
 
 
 questions = load_questions()
@@ -91,12 +127,19 @@ async def on_ready():
             guild = discord.Object(id=GUILD_ID)
 
             bot.tree.copy_global_to(guild=guild)
+
             synced = await bot.tree.sync(guild=guild)
 
-            print(f"Synced {len(synced)} commands to server.")
+            print(
+                f"Synced {len(synced)} commands to server."
+            )
+
         else:
             synced = await bot.tree.sync()
-            print(f"Synced {len(synced)} global commands.")
+
+            print(
+                f"Synced {len(synced)} global commands."
+            )
 
     except Exception as e:
         print("Command sync error:", e)
@@ -134,7 +177,9 @@ async def truth(interaction: discord.Interaction):
         text=f"Asked to {interaction.user.display_name}"
     )
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(
+        embed=embed
+    )
 
 
 # =========================
@@ -167,7 +212,9 @@ async def dare(interaction: discord.Interaction):
         text=f"Dare for {interaction.user.display_name}"
     )
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(
+        embed=embed
+    )
 
 
 # =========================
@@ -181,7 +228,9 @@ async def dare(interaction: discord.Interaction):
 @app_commands.describe(
     question="Enter the Truth question"
 )
-@app_commands.checks.has_permissions(manage_guild=True)
+@app_commands.checks.has_permissions(
+    manage_guild=True
+)
 async def addtruth(
     interaction: discord.Interaction,
     question: str
@@ -197,6 +246,7 @@ async def addtruth(
         return
 
     questions["truth"].append(question)
+
     save_questions(questions)
 
     await interaction.response.send_message(
@@ -216,7 +266,9 @@ async def addtruth(
 @app_commands.describe(
     dare="Enter the Dare"
 )
-@app_commands.checks.has_permissions(manage_guild=True)
+@app_commands.checks.has_permissions(
+    manage_guild=True
+)
 async def adddare(
     interaction: discord.Interaction,
     dare: str
@@ -232,6 +284,7 @@ async def adddare(
         return
 
     questions["dare"].append(dare)
+
     save_questions(questions)
 
     await interaction.response.send_message(
@@ -248,8 +301,12 @@ async def adddare(
     name="listtruth",
     description="Show all Truth questions"
 )
-@app_commands.checks.has_permissions(manage_guild=True)
-async def listtruth(interaction: discord.Interaction):
+@app_commands.checks.has_permissions(
+    manage_guild=True
+)
+async def listtruth(
+    interaction: discord.Interaction
+):
 
     if not questions["truth"]:
         await interaction.response.send_message(
@@ -260,7 +317,10 @@ async def listtruth(interaction: discord.Interaction):
 
     text = ""
 
-    for number, question in enumerate(questions["truth"], start=1):
+    for number, question in enumerate(
+        questions["truth"],
+        start=1
+    ):
         text += f"**{number}.** {question}\n"
 
     # Discord message limit handling
@@ -291,8 +351,12 @@ async def listtruth(interaction: discord.Interaction):
     name="listdare",
     description="Show all Dares"
 )
-@app_commands.checks.has_permissions(manage_guild=True)
-async def listdare(interaction: discord.Interaction):
+@app_commands.checks.has_permissions(
+    manage_guild=True
+)
+async def listdare(
+    interaction: discord.Interaction
+):
 
     if not questions["dare"]:
         await interaction.response.send_message(
@@ -303,7 +367,10 @@ async def listdare(interaction: discord.Interaction):
 
     text = ""
 
-    for number, dare in enumerate(questions["dare"], start=1):
+    for number, dare in enumerate(
+        questions["dare"],
+        start=1
+    ):
         text += f"**{number}.** {dare}\n"
 
     if len(text) > 1900:
@@ -336,7 +403,9 @@ async def listdare(interaction: discord.Interaction):
 @app_commands.describe(
     number="Question number from /listtruth"
 )
-@app_commands.checks.has_permissions(manage_guild=True)
+@app_commands.checks.has_permissions(
+    manage_guild=True
+)
 async def removetruth(
     interaction: discord.Interaction,
     number: int
@@ -352,12 +421,14 @@ async def removetruth(
     if number < 1 or number > len(questions["truth"]):
         await interaction.response.send_message(
             f"❌ Invalid number.\n"
-            f"Available numbers: 1-{len(questions['truth'])}",
+            f"Available numbers: "
+            f"1-{len(questions['truth'])}",
             ephemeral=True
         )
         return
 
     removed = questions["truth"].pop(number - 1)
+
     save_questions(questions)
 
     await interaction.response.send_message(
@@ -377,7 +448,9 @@ async def removetruth(
 @app_commands.describe(
     number="Dare number from /listdare"
 )
-@app_commands.checks.has_permissions(manage_guild=True)
+@app_commands.checks.has_permissions(
+    manage_guild=True
+)
 async def removedare(
     interaction: discord.Interaction,
     number: int
@@ -393,12 +466,14 @@ async def removedare(
     if number < 1 or number > len(questions["dare"]):
         await interaction.response.send_message(
             f"❌ Invalid number.\n"
-            f"Available numbers: 1-{len(questions['dare'])}",
+            f"Available numbers: "
+            f"1-{len(questions['dare'])}",
             ephemeral=True
         )
         return
 
     removed = questions["dare"].pop(number - 1)
+
     save_questions(questions)
 
     await interaction.response.send_message(
@@ -415,7 +490,9 @@ async def removedare(
     name="questioncount",
     description="Show total Truth and Dare questions"
 )
-async def questioncount(interaction: discord.Interaction):
+async def questioncount(
+    interaction: discord.Interaction
+):
 
     truth_count = len(questions["truth"])
     dare_count = len(questions["dare"])
@@ -443,7 +520,9 @@ async def questioncount(interaction: discord.Interaction):
         inline=True
     )
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(
+        embed=embed
+    )
 
 
 # =========================
@@ -454,8 +533,12 @@ async def questioncount(interaction: discord.Interaction):
     name="clearquestions",
     description="Delete ALL Truth and Dare questions"
 )
-@app_commands.checks.has_permissions(administrator=True)
-async def clearquestions(interaction: discord.Interaction):
+@app_commands.checks.has_permissions(
+    administrator=True
+)
+async def clearquestions(
+    interaction: discord.Interaction
+):
 
     questions["truth"].clear()
     questions["dare"].clear()
@@ -463,7 +546,8 @@ async def clearquestions(interaction: discord.Interaction):
     save_questions(questions)
 
     await interaction.response.send_message(
-        "🗑️ **All Truth and Dare questions delete ho gaye.**"
+        "🗑️ **All Truth and Dare questions "
+        "delete ho gaye.**"
     )
 
 
@@ -477,7 +561,10 @@ async def on_app_command_error(
     error: app_commands.AppCommandError
 ):
 
-    if isinstance(error, app_commands.MissingPermissions):
+    if isinstance(
+        error,
+        app_commands.MissingPermissions
+    ):
         message = (
             "❌ Tumhare paas is command ko use karne "
             "ki permission nahi hai."
@@ -507,7 +594,10 @@ async def on_app_command_error(
 # START BOT
 # =========================
 
-if TOKEN == "PASTE_YOUR_BOT_TOKEN_HERE":
-    print("❌ ERROR: Pehle bot.py mein apna Discord Bot Token paste karo.")
+if not TOKEN:
+    print(
+        "❌ ERROR: TOKEN_BOT environment variable "
+        "is missing."
+    )
 else:
     bot.run(TOKEN)
