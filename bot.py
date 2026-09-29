@@ -9,7 +9,8 @@ import random
 # SETTINGS
 # =========================
 
-TOKEN = "MTU1MzgwMzQyNDEzNzYxMzQ1Mw.GPg5RZ.WdzPT9jOlk6-T9MncgDNNVVOiu39mF1MZAaRDQ"
+#TOKEN = "MTU1MzgwMzQyNDEzNzYxMzQ1Mw.GPg5RZ.WdzPT9jOlk6-T9MncgDNNVVOiu39mF1MZAaRDQ"
+TOKEN = os.getenv("TOKEN_BOT")
 
 # Optional:
 # Agar sirf ek server par commands instantly chahiye,
